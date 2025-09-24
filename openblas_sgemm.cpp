@@ -50,11 +50,11 @@ int main(int argc, char* argv[])
     initInputs(A, B, M, N, K);
     float *C = (float*)malloc(sizeof(float) * M * N);
     std::memset(C, 0, sizeof(float) * M * N);
-    /*
+    
     float *D = (float*)malloc(sizeof(float) * M * N);
     std::memset(D, 0, sizeof(float) * M * N);
-    */
-    /*
+    
+    
     // check correctness first
     matmul(A, B, D, M, N, K);
     cblas_sgemm(
@@ -67,11 +67,14 @@ int main(int argc, char* argv[])
         C, N    // C and strides between rows
     );
     compare(C, D, M, N);
-    */
+    
 
     std::vector<double> timings;
-    for (int i = 0; i < WARMUP; ++i) cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1, A, K, B, N, 0, C, N);
-    for (int i = 0; i < RUNS; ++i) timings.push_back(openblas(A, B, C, M, K, N));
+    for (int i = 0; i < WARMUP; ++i) {
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1, A, K, B, N, 0, C, N);
+        std::memset(C, 0, sizeof(float) * M * N);
+    }
+    for (int i = 0; i < RUNS; ++i) timings.push_back(openblas(A, B, C, M, N, K));
     std::sort(timings.begin(), timings.end());
     printResults(timings, FLOPs);
 
@@ -80,7 +83,7 @@ int main(int argc, char* argv[])
     free(A);
     free(B);
     free(C);
-    //free(D);
+    free(D);
     return 0;
 }
 
@@ -89,6 +92,7 @@ double openblas(const float *A, const float *B, float *C, const int M, const int
     auto start = std::chrono::high_resolution_clock::now();
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1, A, K, B, N, 0, C, N);
     auto end = std::chrono::high_resolution_clock::now();
+    std::memset(C, 0, sizeof(float) * M * N);
     std::chrono::duration<double> duration = end - start;
     return duration.count();
 }
@@ -134,5 +138,5 @@ void printResults(const std::vector<double>& results, const double FLOPs)
 
     std::cout << "Took " << total << " seconds for " << RUNS << " runs.\t" << WARMUP << " warmups.\n";
     std::cout << "Avg time: " << avg <<" s, stddev: " << stddev << "\n";
-    std::cout << "Performance: " << FLOPs/1.0e9/avg << " GFLOPs\n\n";
+    std::cout << "Performance: " << std::lround(FLOPs/1.0e9/avg) << " GFLOPs\n\n";
 }

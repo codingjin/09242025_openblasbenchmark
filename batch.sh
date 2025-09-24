@@ -1,11 +1,13 @@
 #!/bin/bash
 
+./settings.sh
+
 make
 
 ./openblas_sgemm 4095 127 4095
 
 ./openblas_sgemm 4096 128 4096
-
+exit 1
 ./openblas_sgemm 4097 129 4097
 
 
